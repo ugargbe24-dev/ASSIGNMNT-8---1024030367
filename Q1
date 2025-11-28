@@ -1,0 +1,181 @@
+#include <iostream>
+#include <climits>
+using namespace std;
+
+#define MAX 100
+
+// ---------- GLOBAL VARIABLES ----------
+int n; // number of nodes
+int graph[MAX][MAX]; // adjacency matrix
+
+// ---------- BFS ----------
+void BFS(int start) {
+    bool visited[MAX] = {false};
+    int queue[MAX], front = 0, rear = 0;
+
+    visited[start] = true;
+    queue[rear++] = start;
+
+    cout << "BFS: ";
+    while (front < rear) {
+        int node = queue[front++];
+        cout << node << " ";
+        for (int i = 0; i < n; i++) {
+            if (graph[node][i] != 0 && !visited[i]) {
+                visited[i] = true;
+                queue[rear++] = i;
+            }
+        }
+    }
+    cout << endl;
+}
+
+// ---------- DFS ----------
+void DFS(int node, bool visited[]) {
+    visited[node] = true;
+    cout << node << " ";
+    for (int i = 0; i < n; i++) {
+        if (graph[node][i] != 0 && !visited[i]) {
+            DFS(i, visited);
+        }
+    }
+}
+
+// ---------- Kruskal ----------
+struct Edge {
+    int u, v, w;
+};
+
+int parent[MAX];
+
+int findParent(int i) {
+    if (parent[i] == i) return i;
+    return findParent(parent[i]);
+}
+
+void unionSet(int a, int b) {
+    parent[findParent(a)] = findParent(b);
+}
+
+void Kruskal(int edgesCount, Edge edges[]) {
+    // Initialize parent
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    // Simple bubble sort edges by weight
+    for (int i = 0; i < edgesCount-1; i++) {
+        for (int j = 0; j < edgesCount-i-1; j++) {
+            if (edges[j].w > edges[j+1].w) {
+                Edge temp = edges[j];
+                edges[j] = edges[j+1];
+                edges[j+1] = temp;
+            }
+        }
+    }
+
+    cout << "Kruskal MST:\n";
+    int count = 0;
+    for (int i = 0; i < edgesCount; i++) {
+        int u = edges[i].u;
+        int v = edges[i].v;
+        if (findParent(u) != findParent(v)) {
+            cout << u << " - " << v << " : " << edges[i].w << endl;
+            unionSet(u, v);
+            count++;
+            if (count == n-1) break;
+        }
+    }
+}
+
+// ---------- Prim ----------
+void Prim() {
+    bool selected[MAX] = {false};
+    int minEdge[MAX], from[MAX];
+
+    for (int i = 0; i < n; i++) {
+        minEdge[i] = INT_MAX;
+        from[i] = -1;
+    }
+
+    minEdge[0] = 0;
+
+    for (int i = 0; i < n; i++) {
+        int u = -1;
+        for (int j = 0; j < n; j++)
+            if (!selected[j] && (u == -1 || minEdge[j] < minEdge[u]))
+                u = j;
+
+        selected[u] = true;
+
+        for (int v = 0; v < n; v++) {
+            if (graph[u][v] != 0 && !selected[v] && graph[u][v] < minEdge[v]) {
+                minEdge[v] = graph[u][v];
+                from[v] = u;
+            }
+        }
+    }
+
+    cout << "Prim MST:\n";
+    for (int i = 1; i < n; i++)
+        cout << from[i] << " - " << i << " : " << graph[from[i]][i] << endl;
+}
+
+// ---------- Dijkstra ----------
+void Dijkstra(int start) {
+    bool visited[MAX] = {false};
+    int dist[MAX];
+
+    for (int i = 0; i < n; i++)
+        dist[i] = INT_MAX;
+    dist[start] = 0;
+
+    for (int i = 0; i < n; i++) {
+        int u = -1;
+        for (int j = 0; j < n; j++)
+            if (!visited[j] && (u == -1 || dist[j] < dist[u]))
+                u = j;
+
+        visited[u] = true;
+
+        for (int v = 0; v < n; v++) {
+            if (graph[u][v] != 0 && !visited[v] && dist[u] + graph[u][v] < dist[v])
+                dist[v] = dist[u] + graph[u][v];
+        }
+    }
+
+    cout << "Dijkstra distances:\n";
+    for (int i = 0; i < n; i++)
+        cout << i << " : " << dist[i] << endl;
+}
+
+// ---------- MAIN ----------
+int main() {
+    n = 5; // number of nodes
+    // adjacency matrix (0 = no edge)
+    int tempGraph[5][5] = {
+        {0, 2, 4, 0, 0},
+        {2, 0, 1, 7, 0},
+        {4, 1, 0, 3, 0},
+        {0, 7, 3, 0, 1},
+        {0, 0, 0, 1, 0}
+    };
+
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            graph[i][j] = tempGraph[i][j];
+
+    BFS(0);
+
+    bool visited[MAX] = {false};
+    cout << "DFS: ";
+    DFS(0, visited);
+    cout << endl;
+
+    Edge edges[] = {{0,1,2},{0,2,4},{1,2,1},{1,3,7},{2,3,3},{3,4,1}};
+    int edgesCount = sizeof(edges)/sizeof(edges[0]);
+    Kruskal(edgesCount, edges);
+
+    Prim();
+    Dijkstra(0);
+
+    return 0;
+}
